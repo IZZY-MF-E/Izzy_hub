@@ -1,58 +1,89 @@
 --[[ 
-IZZY HUB ULTIMATE 🌌
-Features: Full GUI, Fly, Noclip, Auto Farm, Teleports, ESP, Infinity Yield, etc.
-Supports any game with leaderstats.
+IZZY HUB with Floating Toggle + Scroll
+Features: All previous hacks + proper hide/show toggle and movable UI
 ]]--
 
 local plr = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
 
--- GUI MAIN
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "IzzyHub"
+-- === MAIN SCREEN GUI ===
+local screen = Instance.new("ScreenGui", game.CoreGui)
+screen.Name = "IzzyHubUI"
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0,400,0,350)
+-- === FLOATING TOGGLE BUTTON ===
+local toggleBtn = Instance.new("TextButton", screen)
+toggleBtn.Size = UDim2.new(0, 60, 0, 30)
+toggleBtn.Position = UDim2.new(0.05, 0, 0.05, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.Text = "Hub"
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 16
+toggleBtn.Active = true
+
+-- MAKE TOGGLE MOVABLE
+local draggingT, dragInputT, dragStartT, startPosT
+toggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingT = true
+        dragStartT = input.Position
+        startPosT = toggleBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingT = false
+            end
+        end)
+    end
+end)
+toggleBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInputT = input
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if input == dragInputT and draggingT then
+        local delta = input.Position - dragStartT
+        toggleBtn.Position = UDim2.new(startPosT.X.Scale, startPosT.X.Offset + delta.X,
+                                       startPosT.Y.Scale, startPosT.Y.Offset + delta.Y)
+    end
+end)
+
+-- === MAIN HUB FRAME (SCROLLABLE) ===
+local frame = Instance.new("Frame", screen)
+frame.Size = UDim2.new(0, 400, 0, 350)
 frame.Position = UDim2.new(0.3,0,0.3,0)
 frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.BorderSizePixel = 0
 frame.Active = true
 
+-- Title
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1,0,0,30)
+title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundColor3 = Color3.fromRGB(40,40,40)
 title.Text = "IZZY HUB - GOD MODE"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 
--- Close
+-- Close Button
 local close = Instance.new("TextButton", title)
-close.Size = UDim2.new(0,30,1,0)
-close.Position = UDim2.new(1,-30,0,0)
+close.Size = UDim2.new(0, 30, 1, 0)
+close.Position = UDim2.new(1, -30, 0, 0)
 close.Text = "X"
 close.BackgroundColor3 = Color3.fromRGB(200,0,0)
 close.TextColor3 = Color3.new(1,1,1)
-close.MouseButton1Click:Connect(function() gui:Destroy() end)
+close.MouseButton1Click:Connect(function() screen:Destroy() end)
 
--- Minimize
-local mini = Instance.new("TextButton", title)
-mini.Size = UDim2.new(0,30,1,0)
-mini.Position = UDim2.new(1,-60,0,0)
-mini.Text = "-"
-mini.BackgroundColor3 = Color3.fromRGB(255,170,0)
-mini.TextColor3 = Color3.new(1,1,1)
-local min = false
-mini.MouseButton1Click:Connect(function()
-    min = not min
-    if min then
-        frame.Size = UDim2.new(0,400,0,30)
-    else
-        frame.Size = UDim2.new(0,400,0,350)
-    end
-end)
+-- SCROLL FRAME INSIDE
+local scroll = Instance.new("ScrollingFrame", frame)
+scroll.Size = UDim2.new(1, 0, 1, -30)
+scroll.Position = UDim2.new(0,0,0,30)
+scroll.CanvasSize = UDim2.new(0,0,2,0) -- expandable
+scroll.ScrollBarThickness = 8
+scroll.BackgroundTransparency = 1
 
--- Dragging
+-- MAKE MAIN HUB MOVABLE
 local dragging, dragInput, dragStart, startPos
 title.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -79,26 +110,35 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
--- BUTTON MAKER
-local function makeBtn(txt,y,callback)
-    local b = Instance.new("TextButton", frame)
-    b.Size = UDim2.new(1,-20,0,30)
-    b.Position = UDim2.new(0,10,0,y)
-    b.Text = txt
-    b.BackgroundColor3 = Color3.fromRGB(0,120,255)
-    b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.GothamBold
-    b.TextSize = 16
-    b.MouseButton1Click:Connect(callback)
+-- TOGGLE FUNCTIONALITY (Show/Hide frame)
+local visible = true
+toggleBtn.MouseButton1Click:Connect(function()
+    visible = not visible
+    frame.Visible = visible
+end)
+
+-- === BUTTON CREATOR (Inside Scroll) ===
+local yOffset = 10
+local function addButton(text, callback)
+    local btn = Instance.new("TextButton", scroll)
+    btn.Size = UDim2.new(1, -20, 0, 30)
+    btn.Position = UDim2.new(0,10,0,yOffset)
+    btn.BackgroundColor3 = Color3.fromRGB(0,120,255)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.Text = text
+    btn.MouseButton1Click:Connect(callback)
+    yOffset = yOffset + 40
+    scroll.CanvasSize = UDim2.new(0,0,0,yOffset)
 end
 
--- Auto Farm
+-- === FEATURES ===
 local autoFarm = false
-makeBtn("🌱 Toggle Auto Farm", 40, function() autoFarm = not autoFarm end)
+addButton("🌱 Toggle Auto Farm", function() autoFarm = not autoFarm end)
 
--- Fly
 local flying = false
-makeBtn("🪽 Toggle Fly", 80, function()
+addButton("🪽 Toggle Fly", function()
     flying = not flying
     local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
     if flying and hrp then
@@ -119,9 +159,8 @@ makeBtn("🪽 Toggle Fly", 80, function()
     end
 end)
 
--- Noclip
 local noclip = false
-makeBtn("🚪 Toggle Noclip", 120, function()
+addButton("🚪 Toggle Noclip", function()
     noclip = not noclip
     RS.Stepped:Connect(function()
         if noclip and plr.Character then
@@ -134,37 +173,29 @@ makeBtn("🚪 Toggle Noclip", 120, function()
     end)
 end)
 
--- Speed Boost
-makeBtn("⚡ Toggle Speed Boost", 160, function()
-    plr.Character.Humanoid.WalkSpeed = 
-        (plr.Character.Humanoid.WalkSpeed == 16) and 60 or 16
+addButton("⚡ Toggle Speed Boost", function()
+    plr.Character.Humanoid.WalkSpeed = (plr.Character.Humanoid.WalkSpeed == 16) and 60 or 16
 end)
 
--- Jump Boost
-makeBtn("🌀 Toggle Jump Boost", 200, function()
-    plr.Character.Humanoid.JumpPower = 
-        (plr.Character.Humanoid.JumpPower == 50) and 150 or 50
+addButton("🌀 Toggle Jump Boost", function()
+    plr.Character.Humanoid.JumpPower = (plr.Character.Humanoid.JumpPower == 50) and 150 or 50
 end)
 
--- Swim Everywhere
-makeBtn("🌊 Toggle Swim Everywhere", 240, function()
+addButton("🌊 Toggle Swim Everywhere", function()
     plr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
 end)
 
--- Dance
-makeBtn("💃 Start Dancing", 280, function()
+addButton("💃 Start Dancing", function()
     plr.Character.Humanoid:LoadAnimation(Instance.new("Animation", {AnimationId="rbxassetid://3189773368"})):Play()
 end)
 
--- Teleport
-makeBtn("🏡 Teleport to Garden", 320, function()
+addButton("🏡 Teleport to Garden", function()
     if workspace:FindFirstChild("GardenSpawn") then
         plr.Character:MoveTo(workspace.GardenSpawn.Position)
     end
 end)
 
--- ESP Players
-makeBtn("👀 Toggle Player ESP", 360, function()
+addButton("👀 Toggle Player ESP", function()
     for _, p in ipairs(game.Players:GetPlayers()) do
         if p.Character and p.Character:FindFirstChild("Head") then
             local highlight = Instance.new("Highlight", p.Character)
@@ -187,10 +218,10 @@ spawn(function()
     end
 end)
 
--- ANTI AFK
+-- ANTI-AFK
 for _,v in pairs(getconnections(plr.Idled)) do
     v:Disable()
 end
 
--- INFINITY YIELD
+-- INFINITY YIELD ADMIN
 loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
